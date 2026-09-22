@@ -46,3 +46,5 @@ backend/__pycache__/
 
 # OS files
 Thumbs.db
+# Database backups
+*.sql

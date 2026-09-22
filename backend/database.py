@@ -4,8 +4,10 @@ import mysql.connector
 
 def get_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
+        host=os.getenv("AQUANAV_MYSQL_HOST"),
+        port=int(os.getenv("AQUANAV_MYSQL_PORT", "3306")),
+        user=os.getenv("AQUANAV_MYSQL_USER"),
         password=os.getenv("AQUANAV_MYSQL_PASSWORD"),
-        database="aquanav"
+        database=os.getenv("AQUANAV_MYSQL_DATABASE", "aquanav"),
+        ssl_disabled=False
     )
