@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNav from "../components/BottomNav.tsx"
 
-const API_URL = "https://aquanav-backend.onrender.com";
+const API_URL = "https://aquanav-backend.onrender.com"
+
 type User = {
   id: number
   user_id: string
@@ -48,8 +49,14 @@ function ProfilePage() {
       setLoading(true)
       setError("")
 
+      // Get profile
       const userResponse = await fetch(
-        `${API_URL}/users/${currentUser.user_id}`
+        `${API_URL}/users/${currentUser.user_id}`,
+        {
+          headers: {
+            "X-User-ID": currentUser.user_id,
+          },
+        }
       )
 
       const userData = await userResponse.json()
@@ -57,13 +64,14 @@ function ProfilePage() {
       if (!userResponse.ok) {
         setError(
           userData.detail ||
-          "Unable to load profile."
+            "Unable to load profile."
         )
         return
       }
 
       setUser(userData)
 
+      // Get fishing trips
       const tripsResponse = await fetch(
         `${API_URL}/trips/${currentUser.user_id}`,
         {
@@ -78,13 +86,12 @@ function ProfilePage() {
       if (!tripsResponse.ok) {
         setError(
           tripsData.detail ||
-          "Unable to load fishing history."
+            "Unable to load fishing history."
         )
         return
       }
 
       setTrips(tripsData.trips || [])
-
     } catch (error) {
       console.error("Profile error:", error)
 
