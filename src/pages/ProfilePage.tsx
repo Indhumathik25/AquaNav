@@ -2,8 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNav from "../components/BottomNav.tsx"
 
-const API_URL = "/api";
-
+const API_URL = "https://aquanav-backend.onrender.com";
 type User = {
   id: number
   user_id: string

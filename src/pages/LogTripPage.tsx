@@ -3,7 +3,7 @@ import { useState } from "react"
 import type { FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 
-const API_URL = "/api";
+const API_URL = "https://aquanav-backend.onrender.com";
 
 export default function LogTripPage() {
   const navigate = useNavigate()
