@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNav from "../components/BottomNav.tsx"
-const API_URL = "https://aquanav-backend.onrender.com";
+
+const API_URL = "https://aquanav-backend.onrender.com"
 
 type Trip = {
   id: number
@@ -17,6 +18,8 @@ type ZoneData = {
   zone: string
   trips: number
   score: number
+  averageFuel: number
+  efficiency: number
 }
 
 const zones = [
@@ -74,13 +77,16 @@ function RouteOptimizerPage() {
       if (!response.ok) {
         setError(
           data.detail ||
-          "Unable to load fishing history."
+            "Unable to load fishing history."
         )
         return
       }
 
-      setTrips(Array.isArray(data) ? data : data.trips || [])
-
+      setTrips(
+        Array.isArray(data)
+          ? data
+          : data.trips || []
+      )
     } catch (error) {
       console.error(
         "Route optimizer error:",
@@ -95,9 +101,19 @@ function RouteOptimizerPage() {
     }
   }
 
+  /*
+   * Calculate performance for every zone
+   *
+   * Score:
+   * GOOD     = 10
+   * AVERAGE  = 5
+   * POOR     = 1
+   *
+   * Efficiency:
+   * average catch score / average fuel used
+   */
   const zoneData: ZoneData[] = zones.map(
     (zone) => {
-
       const zoneTrips = trips.filter(
         (trip) => trip.area === zone
       )
@@ -114,17 +130,47 @@ function RouteOptimizerPage() {
           ? totalScore / zoneTrips.length
           : 0
 
+      const zoneTotalFuel =
+        zoneTrips.reduce(
+          (sum, trip) =>
+            sum + Number(trip.fuel || 0),
+          0
+        )
+
+      const averageFuel =
+        zoneTrips.length > 0
+          ? zoneTotalFuel / zoneTrips.length
+          : 0
+
+      const efficiency =
+        averageFuel > 0
+          ? averageScore / averageFuel
+          : 0
+
       return {
         zone,
         trips: zoneTrips.length,
         score: averageScore,
+        averageFuel,
+        efficiency,
       }
     }
   )
 
+  /*
+   * Only zones with recorded trips can be recommended.
+   *
+   * Priority:
+   * 1. Fuel efficiency
+   * 2. Average fishing performance
+   * 3. Number of recorded trips
+   */
   const productiveZones = [...zoneData]
     .filter((zone) => zone.trips > 0)
     .sort((a, b) => {
+      if (b.efficiency !== a.efficiency) {
+        return b.efficiency - a.efficiency
+      }
 
       if (b.score !== a.score) {
         return b.score - a.score
@@ -140,20 +186,29 @@ function RouteOptimizerPage() {
     (zone) => zone.zone
   )
 
-  const totalFuel = trips.reduce(
-    (sum, trip) =>
-      sum + Number(trip.fuel || 0),
-    0
-  )
+  /*
+   * Calculate estimated fuel savings from
+   * the historically recorded fuel usage
+   * of the recommended zones.
+   *
+   * Prototype assumption:
+   * AquaNav estimates a 15% saving when
+   * following the personalized route.
+   */
+  const recommendedFuelUsage =
+    optimizedZones.reduce(
+      (sum, zone) =>
+        sum +
+        zone.averageFuel * zone.trips,
+      0
+    )
 
   const estimatedFuelSaved =
-    trips.length > 0
-      ? Math.min(
-          totalFuel * 0.15,
-          Math.max(
-            2.5,
-            route.length * 2.5
-          )
+    recommendedFuelUsage > 0
+      ? Number(
+          (
+            recommendedFuelUsage * 0.15
+          ).toFixed(1)
         )
       : 0
 
@@ -169,9 +224,7 @@ function RouteOptimizerPage() {
   if (loading) {
     return (
       <main className="route-page">
-
         <header className="page-header route-page-header">
-
           <p className="dashboard-label">
             AQUANAV
           </p>
@@ -183,20 +236,16 @@ function RouteOptimizerPage() {
           <p>
             Loading your personalized route...
           </p>
-
         </header>
 
         <BottomNav />
-
       </main>
     )
   }
 
   return (
     <main className="route-page">
-
       <header className="page-header route-page-header">
-
         <p className="dashboard-label">
           AQUANAV
         </p>
@@ -209,7 +258,6 @@ function RouteOptimizerPage() {
           A personalized route based on your
           fishing history.
         </p>
-
       </header>
 
       {error && (
@@ -218,14 +266,13 @@ function RouteOptimizerPage() {
         </div>
       )}
 
+      {/* Recommended Route */}
       <section className="route-highlight">
-
         <div className="route-icon">
           🧭
         </div>
 
         <div className="route-highlight-content">
-
           <p>
             Recommended Route
           </p>
@@ -236,23 +283,19 @@ function RouteOptimizerPage() {
 
           <span>
             Based on your recorded fishing
-            performance
+            performance and fuel efficiency
           </span>
-
         </div>
-
       </section>
 
+      {/* No trip data */}
       {trips.length === 0 && (
-
         <section className="route-info">
-
           <div className="route-info-icon">
             💡
           </div>
 
           <div>
-
             <h2>
               Start recording your fishing trips
             </h2>
@@ -266,19 +309,14 @@ function RouteOptimizerPage() {
               Add at least a few fishing trips with
               different zones and catch qualities.
             </p>
-
           </div>
-
         </section>
-
       )}
 
+      {/* Personalized Navigation Path */}
       {route.length > 0 && (
-
         <section className="route-map-card">
-
           <div className="route-section-title">
-
             <span>
               🗺️
             </span>
@@ -286,25 +324,20 @@ function RouteOptimizerPage() {
             <h2>
               Personalized Navigation Path
             </h2>
-
           </div>
 
           <div className="route-path">
-
             {route.map(
               (zone, index) => (
-
                 <div
                   className="route-step"
                   key={zone}
                 >
-
                   <div className="route-marker">
                     {index + 1}
                   </div>
 
                   <div className="route-zone">
-
                     <span>
                       Stop {index + 1}
                     </span>
@@ -312,35 +345,27 @@ function RouteOptimizerPage() {
                     <strong>
                       {formatZone(zone)}
                     </strong>
-
                   </div>
 
                   {index <
                     route.length - 1 && (
                     <div className="route-line" />
                   )}
-
                 </div>
-
               )
             )}
-
           </div>
-
         </section>
-
       )}
 
+      {/* Route Statistics */}
       <section className="route-stats">
-
         <article className="route-stat-card">
-
           <div className="route-stat-icon">
             ⛽
           </div>
 
           <div>
-
             <p>
               Estimated Fuel Saved
             </p>
@@ -348,19 +373,15 @@ function RouteOptimizerPage() {
             <strong>
               {estimatedFuelSaved.toFixed(1)} L
             </strong>
-
           </div>
-
         </article>
 
         <article className="route-stat-card">
-
           <div className="route-stat-icon">
             📍
           </div>
 
           <div>
-
             <p>
               Recommended Zones
             </p>
@@ -368,19 +389,15 @@ function RouteOptimizerPage() {
             <strong>
               {route.length}
             </strong>
-
           </div>
-
         </article>
 
         <article className="route-stat-card">
-
           <div className="route-stat-icon">
             🧭
           </div>
 
           <div>
-
             <p>
               Route Status
             </p>
@@ -390,19 +407,14 @@ function RouteOptimizerPage() {
                 ? "Personalized"
                 : "Waiting for Data"}
             </strong>
-
           </div>
-
         </article>
-
       </section>
 
+      {/* Zone Performance */}
       {productiveZones.length > 0 && (
-
         <section className="route-map-card">
-
           <div className="route-section-title">
-
             <span>
               📊
             </span>
@@ -410,22 +422,17 @@ function RouteOptimizerPage() {
             <h2>
               Zone Performance
             </h2>
-
           </div>
 
           <div className="route-zone-performance">
-
             {productiveZones
               .slice(0, 5)
               .map((zone, index) => (
-
                 <div
                   className="route-performance-row"
                   key={zone.zone}
                 >
-
                   <div>
-
                     <strong>
                       {index + 1}.{" "}
                       {formatZone(zone.zone)}
@@ -438,37 +445,42 @@ function RouteOptimizerPage() {
                         : "trips"}
                     </span>
 
+                    <span>
+                      {zone.averageFuel.toFixed(1)} L/trip
+                    </span>
                   </div>
 
-                  <strong>
-                    {zone.score.toFixed(1)} / 10
-                  </strong>
+                  <div>
+                    <strong>
+                      {zone.score.toFixed(1)} / 10
+                    </strong>
 
+                    <span>
+                      Efficiency{" "}
+                      {zone.efficiency.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-
               ))}
-
           </div>
-
         </section>
-
       )}
 
+      {/* Explanation */}
       <section className="route-info">
-
         <div className="route-info-icon">
           💡
         </div>
 
         <div>
-
           <h2>
             How AquaNav Calculates Your Route
           </h2>
 
           <p>
             AquaNav looks at your recorded catch
-            quality for each fishing zone.
+            quality and fuel usage for each
+            fishing zone.
           </p>
 
           <p>
@@ -478,25 +490,38 @@ function RouteOptimizerPage() {
           </p>
 
           <p>
-            The zones with the strongest historical
-            performance are placed into your
-            recommended route.
+            AquaNav calculates the average catch
+            score and average fuel usage for each
+            zone.
           </p>
 
           <p>
-            Fuel savings shown here are a prototype
-            estimate.
+            Fuel efficiency is calculated by
+            comparing the average catch score
+            with the average fuel used.
           </p>
 
-        </div>
+          <p>
+            Zones with recorded trips and stronger
+            fuel efficiency are placed higher in
+            the personalized route.
+          </p>
 
+          <p>
+            Estimated fuel savings currently use
+            a prototype 15% saving assumption
+            based on your historical fuel usage.
+          </p>
+        </div>
       </section>
 
+      {/* Actions */}
       <div className="route-action">
-
         <button
           className="primary-button"
-          onClick={() => navigate("/log-trip")}
+          onClick={() =>
+            navigate("/log-trip")
+          }
         >
           + Add Fishing Trip
         </button>
@@ -506,15 +531,15 @@ function RouteOptimizerPage() {
           style={{
             marginTop: "12px",
           }}
-          onClick={() => navigate("/dashboard")}
+          onClick={() =>
+            navigate("/dashboard")
+          }
         >
           ← Back to Dashboard
         </button>
-
       </div>
 
       <BottomNav />
-
     </main>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNav from "../components/BottomNav.tsx"
 
-const API_URL = "https://aquanav-backend.onrender.com";
+const API_URL = "https://aquanav-backend.onrender.com"
 
 type Trip = {
   id: number
@@ -12,6 +12,14 @@ type Trip = {
   quality: string
   fuel: number
   created_at: string
+}
+
+type ZoneData = {
+  zone: string
+  trips: number
+  score: number
+  averageFuel: number
+  efficiency: number
 }
 
 const qualityScore: Record<string, number> = {
@@ -65,10 +73,16 @@ function AnalyticsPage() {
         return
       }
 
-     setTrips(Array.isArray(data) ? data : data.trips || [])
-
+      setTrips(
+        Array.isArray(data)
+          ? data
+          : data.trips || []
+      )
     } catch (error) {
-      console.error("Analytics error:", error)
+      console.error(
+        "Analytics error:",
+        error
+      )
 
       setError(
         "Unable to connect to AquaNav server."
@@ -78,10 +92,15 @@ function AnalyticsPage() {
     }
   }
 
+  /*
+   * BASIC STATISTICS
+   */
+
   const totalTrips = trips.length
 
   const totalFuel = trips.reduce(
-    (sum, trip) => sum + Number(trip.fuel || 0),
+    (sum, trip) =>
+      sum + Number(trip.fuel || 0),
     0
   )
 
@@ -90,60 +109,13 @@ function AnalyticsPage() {
   ).length
 
   const averageFuel =
-    trips.length > 0
-      ? totalFuel / trips.length
+    totalTrips > 0
+      ? totalFuel / totalTrips
       : 0
 
-  const zoneData: Record<
-    string,
-    {
-      trips: number
-      score: number
-    }
-  > = {}
-
-  trips.forEach((trip) => {
-
-    if (!zoneData[trip.area]) {
-      zoneData[trip.area] = {
-        trips: 0,
-        score: 0,
-      }
-    }
-
-    zoneData[trip.area].trips += 1
-
-    zoneData[trip.area].score +=
-      qualityScore[trip.quality] || 0
-  })
-
-  const productiveZones = Object.entries(
-    zoneData
-  )
-    .map(([zone, data]) => ({
-      zone,
-      trips: data.trips,
-      score:
-        data.trips > 0
-          ? data.score / data.trips
-          : 0,
-    }))
-    .sort((a, b) => {
-
-      if (b.score !== a.score) {
-        return b.score - a.score
-      }
-
-      return b.trips - a.trips
-    })
-
-  const productiveZone =
-    productiveZones[0]?.zone || "—"
-
-  const formattedProductiveZone =
-    productiveZone === "—"
-      ? "—"
-      : productiveZone.replace("_", " ")
+  /*
+   * OVERALL PERFORMANCE
+   */
 
   const performanceScore =
     totalTrips > 0
@@ -155,12 +127,124 @@ function AnalyticsPage() {
         ) / totalTrips
       : 0
 
+  /*
+   * ZONE ANALYSIS
+   */
+
+  const zoneMap: Record<
+    string,
+    {
+      trips: number
+      score: number
+      fuel: number
+    }
+  > = {}
+
+  trips.forEach((trip) => {
+    if (!zoneMap[trip.area]) {
+      zoneMap[trip.area] = {
+        trips: 0,
+        score: 0,
+        fuel: 0,
+      }
+    }
+
+    zoneMap[trip.area].trips += 1
+
+    zoneMap[trip.area].score +=
+      qualityScore[trip.quality] || 0
+
+    zoneMap[trip.area].fuel +=
+      Number(trip.fuel || 0)
+  })
+
+  const productiveZones: ZoneData[] =
+    Object.entries(zoneMap)
+      .map(([zone, data]) => {
+        const averageScore =
+          data.trips > 0
+            ? data.score / data.trips
+            : 0
+
+        const averageFuel =
+          data.trips > 0
+            ? data.fuel / data.trips
+            : 0
+
+        const efficiency =
+          averageFuel > 0
+            ? averageScore / averageFuel
+            : 0
+
+        return {
+          zone,
+          trips: data.trips,
+          score: averageScore,
+          averageFuel,
+          efficiency,
+        }
+      })
+      .sort((a, b) => {
+        if (
+          b.efficiency !==
+          a.efficiency
+        ) {
+          return (
+            b.efficiency -
+            a.efficiency
+          )
+        }
+
+        if (
+          b.score !==
+          a.score
+        ) {
+          return (
+            b.score -
+            a.score
+          )
+        }
+
+        return (
+          b.trips -
+          a.trips
+        )
+      })
+
+  const productiveZone =
+    productiveZones[0]?.zone || "—"
+
+  const formattedProductiveZone =
+    productiveZone === "—"
+      ? "—"
+      : productiveZone.replace(
+          "_",
+          " "
+        )
+
+  /*
+   * DATA-BASED INSIGHT
+   */
+
+  const bestZone =
+    productiveZones[0]
+
+  const insightText =
+    bestZone
+      ? `${bestZone.zone.replace(
+          "_",
+          " "
+        )} currently has the strongest combination of fishing performance and fuel efficiency based on your recorded trips.`
+      : "Record more fishing trips to generate personalized analytics."
+
+  /*
+   * LOADING STATE
+   */
+
   if (loading) {
     return (
       <main className="analytics-page">
-
         <header className="page-header">
-
           <p className="dashboard-label">
             AQUANAV
           </p>
@@ -172,11 +256,9 @@ function AnalyticsPage() {
           <p>
             Loading your fishing analytics...
           </p>
-
         </header>
 
         <BottomNav />
-
       </main>
     )
   }
@@ -184,8 +266,9 @@ function AnalyticsPage() {
   return (
     <main className="analytics-page">
 
-      <header className="page-header">
+      {/* HEADER */}
 
+      <header className="page-header">
         <p className="dashboard-label">
           AQUANAV
         </p>
@@ -195,16 +278,20 @@ function AnalyticsPage() {
         </h1>
 
         <p>
-          Insights from your recorded fishing trips.
+          Insights from your recorded
+          fishing trips.
         </p>
-
       </header>
+
+      {/* ERROR */}
 
       {error && (
         <div className="auth-error">
           {error}
         </div>
       )}
+
+      {/* PERFORMANCE */}
 
       <section className="analytics-highlight">
 
@@ -223,17 +310,21 @@ function AnalyticsPage() {
           </h2>
 
           <span>
-            Based on catch quality
+            Based on recorded catch quality
           </span>
 
         </div>
 
       </section>
 
+      {/* BASIC STATISTICS */}
+
       <section className="analytics-grid">
 
         <article className="analytics-card">
-          <p>Total Trips</p>
+          <p>
+            Total Trips
+          </p>
 
           <strong>
             {totalTrips}
@@ -241,7 +332,9 @@ function AnalyticsPage() {
         </article>
 
         <article className="analytics-card">
-          <p>Good Trips</p>
+          <p>
+            Good Trips
+          </p>
 
           <strong>
             {goodTrips}
@@ -249,7 +342,9 @@ function AnalyticsPage() {
         </article>
 
         <article className="analytics-card">
-          <p>Average Fuel</p>
+          <p>
+            Average Fuel
+          </p>
 
           <strong>
             {averageFuel.toFixed(1)} L
@@ -257,7 +352,9 @@ function AnalyticsPage() {
         </article>
 
         <article className="analytics-card">
-          <p>Total Fuel</p>
+          <p>
+            Total Fuel
+          </p>
 
           <strong>
             {totalFuel.toFixed(1)} L
@@ -266,11 +363,14 @@ function AnalyticsPage() {
 
       </section>
 
+      {/* MOST PRODUCTIVE ZONE */}
+
       <section className="analytics-card analytics-zone-card">
 
         <div className="analytics-card-header">
 
           <div>
+
             <p className="dashboard-label">
               PRODUCTIVITY
             </p>
@@ -278,6 +378,7 @@ function AnalyticsPage() {
             <h2>
               Most Productive Zone
             </h2>
+
           </div>
 
           <span className="analytics-zone-icon">
@@ -292,12 +393,45 @@ function AnalyticsPage() {
 
         {productiveZones.length > 0 && (
           <p>
-            Average performance score:{" "}
-            {productiveZones[0].score.toFixed(1)} / 10
+            Average performance:{" "}
+            {productiveZones[0].score.toFixed(1)}
+            {" "} / 10
           </p>
         )}
 
       </section>
+
+      {/* DATA-BASED INSIGHT */}
+
+      <section className="analytics-card">
+
+        <div className="analytics-card-header">
+
+          <div>
+
+            <p className="dashboard-label">
+              AQUANAV INSIGHT
+            </p>
+
+            <h2>
+              Fishing Insight
+            </h2>
+
+          </div>
+
+          <span className="analytics-zone-icon">
+            💡
+          </span>
+
+        </div>
+
+        <p>
+          {insightText}
+        </p>
+
+      </section>
+
+      {/* ZONE ANALYSIS */}
 
       {productiveZones.length > 0 && (
 
@@ -306,6 +440,7 @@ function AnalyticsPage() {
           <div className="analytics-card-header">
 
             <div>
+
               <p className="dashboard-label">
                 ZONE ANALYSIS
               </p>
@@ -313,41 +448,62 @@ function AnalyticsPage() {
               <h2>
                 Zone Performance
               </h2>
+
             </div>
 
           </div>
 
           <div className="analytics-zone-list">
 
-            {productiveZones.map((zone) => (
+            {productiveZones.map(
+              (zone) => (
 
-              <div
-                className="analytics-zone-row"
-                key={zone.zone}
-              >
+                <div
+                  className="analytics-zone-row"
+                  key={zone.zone}
+                >
 
-                <div>
+                  <div>
 
-                  <strong>
-                    {zone.zone.replace("_", " ")}
-                  </strong>
+                    <strong>
+                      {zone.zone.replace(
+                        "_",
+                        " "
+                      )}
+                    </strong>
 
-                  <span>
-                    {zone.trips}{" "}
-                    {zone.trips === 1
-                      ? "trip"
-                      : "trips"}
-                  </span>
+                    <span>
+                      {zone.trips}{" "}
+                      {zone.trips === 1
+                        ? "trip"
+                        : "trips"}
+                    </span>
+
+                    <span>
+                      {zone.averageFuel.toFixed(1)}
+                      {" "}L/trip
+                    </span>
+
+                  </div>
+
+                  <div>
+
+                    <strong>
+                      {zone.score.toFixed(1)}
+                      {" "} / 10
+                    </strong>
+
+                    <span>
+                      Efficiency{" "}
+                      {zone.efficiency.toFixed(2)}
+                    </span>
+
+                  </div>
 
                 </div>
 
-                <strong>
-                  {zone.score.toFixed(1)} / 10
-                </strong>
-
-              </div>
-
-            ))}
+              )
+            )}
 
           </div>
 
@@ -355,9 +511,15 @@ function AnalyticsPage() {
 
       )}
 
+      {/* ROUTE OPTIMIZER */}
+
       <button
         className="primary-button"
-        onClick={() => navigate("/route-optimizer")}
+        onClick={() =>
+          navigate(
+            "/route-optimizer"
+          )
+        }
       >
         Open Route Optimizer
       </button>
