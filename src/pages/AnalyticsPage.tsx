@@ -65,7 +65,7 @@ function AnalyticsPage() {
         return
       }
 
-      setTrips(data.trips || [])
+     setTrips(Array.isArray(data) ? data : data.trips || [])
 
     } catch (error) {
       console.error("Analytics error:", error)

@@ -57,7 +57,7 @@ function DashboardPage() {
         return
       }
 
-      setTrips(data.trips || [])
+      setTrips(Array.isArray(data) ? data : data.trips || [])
     } catch (error) {
       console.error("Dashboard error:", error)
 

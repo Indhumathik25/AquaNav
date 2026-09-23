@@ -91,7 +91,7 @@ function ProfilePage() {
         return
       }
 
-      setTrips(tripsData.trips || [])
+     setTrips(Array.isArray(tripsData) ? tripsData : tripsData.trips || [])
     } catch (error) {
       console.error("Profile error:", error)
 
