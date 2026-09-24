@@ -384,7 +384,12 @@ def get_user(
 # ============================================================
 
 @app.post("/trips")
-def create_trip(trip: TripCreate):
+def create_trip(
+    trip: TripCreate,
+    x_user_id: Optional[str] = Header(default=None),
+):
+    check_trip_owner(trip.user_id, x_user_id)
+
     connection = None
     cursor = None
 
