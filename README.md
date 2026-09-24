@@ -1,32 +1,60 @@
-# React + TypeScript + Vite
+# AquaNav
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+### Navigate Smarter. Save Fuel. Fish Better.
 
-Currently, two official plugins are available:
+AquaNav is a fishing management and route-planning web application designed to help fishermen record fishing trips, analyze their fishing history, and make data-informed route decisions.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- 🔐 User registration and login
+- 📊 Fishing dashboard
+- 🎣 Fishing trip logging
+- 📜 Fishing history
+- 📈 Fishing analytics
+- 🧭 Route optimizer
+- 👤 User profile
+- 🚪 Secure logout
+- 📱 Responsive mobile-friendly interface
+- 🔒 User-based trip data protection
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Technology Stack
 
-## Expanding the Oxlint configuration
+### Frontend
+- React
+- TypeScript
+- Vite
+- React Router
+- CSS
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+### Backend
+- Python
+- FastAPI
+- MySQL Connector
+- bcrypt
+- python-dotenv
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+### Database
+- MySQL
+- Aiven MySQL
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Deployment
+- Frontend: Render
+- Backend: Render
+- Database: Aiven MySQL
+
+## Project Architecture
+
+```text
+                    AquaNav
+                       │
+                       ▼
+              React + TypeScript
+                 Frontend
+                       │
+                       ▼
+                 FastAPI API
+                   Backend
+                       │
+                       ▼
+                 Aiven MySQL
+                   Database
