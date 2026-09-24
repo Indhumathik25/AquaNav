@@ -21,63 +21,63 @@ function DashboardPage() {
     localStorage.getItem("currentUser") || "null"
   )
 
+  const userId = currentUser?.user_id
+
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!userId) {
       navigate("/login")
       return
     }
 
-    fetchTrips()
-  }, [])
+    const fetchTrips = async () => {
+      try {
+        setLoading(true)
+        setError("")
 
-  const fetchTrips = async () => {
-    if (!currentUser) return
-
-    try {
-      setLoading(true)
-      setError("")
-
-      const response = await fetch(
-        `${API_URL}/trips/${currentUser.user_id}`,
-        {
-          headers: {
-            "X-User-ID": currentUser.user_id,
-          },
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(
-          data.detail ||
-            "Unable to load fishing data."
+        const response = await fetch(
+          `${API_URL}/trips/${userId}`,
+          {
+            headers: {
+              "X-User-ID": userId,
+            },
+          }
         )
-        return
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          setError(
+            data.detail ||
+              "Unable to load fishing data."
+          )
+          return
+        }
+
+        setTrips(
+          Array.isArray(data)
+            ? data
+            : data.trips || []
+        )
+      } catch (error) {
+        console.error(
+          "Dashboard error:",
+          error
+        )
+
+        setError(
+          "Unable to connect to AquaNav server."
+        )
+      } finally {
+        setLoading(false)
       }
-
-      setTrips(
-        Array.isArray(data)
-          ? data
-          : data.trips || []
-      )
-    } catch (error) {
-      console.error(
-        "Dashboard error:",
-        error
-      )
-
-      setError(
-        "Unable to connect to AquaNav server."
-      )
-    } finally {
-      setLoading(false)
     }
-  }
+
+    fetchTrips()
+  }, [userId, navigate])
 
   /*
    * BASIC TRIP STATISTICS
@@ -193,10 +193,8 @@ function DashboardPage() {
   if (loading) {
     return (
       <main className="dashboard-page">
-
         <header className="dashboard-header">
           <div>
-
             <p className="dashboard-label">
               AQUANAV
             </p>
@@ -208,12 +206,10 @@ function DashboardPage() {
             <p>
               Loading your fishing dashboard.
             </p>
-
           </div>
         </header>
 
         <section className="dashboard-grid">
-
           <article className="dashboard-card">
             <h2>
               Loading your data...
@@ -223,24 +219,19 @@ function DashboardPage() {
               Please wait.
             </p>
           </article>
-
         </section>
 
         <BottomNav />
-
       </main>
     )
   }
 
   return (
     <main className="dashboard-page">
-
       {/* HEADER */}
 
       <header className="dashboard-header">
-
         <div>
-
           <p className="dashboard-label">
             AQUANAV
           </p>
@@ -255,7 +246,6 @@ function DashboardPage() {
           <p>
             Navigate Smarter. Save Fuel. Fish Better.
           </p>
-
         </div>
 
         <button
@@ -264,7 +254,6 @@ function DashboardPage() {
         >
           Logout
         </button>
-
       </header>
 
       {/* ERROR */}
@@ -278,9 +267,7 @@ function DashboardPage() {
       {/* DASHBOARD STATISTICS */}
 
       <section className="dashboard-grid">
-
         <article className="dashboard-card">
-
           <p>
             Total Fishing Trips
           </p>
@@ -292,11 +279,9 @@ function DashboardPage() {
           <span>
             Recorded trips
           </span>
-
         </article>
 
         <article className="dashboard-card">
-
           <p>
             Most Visited Zone
           </p>
@@ -308,11 +293,9 @@ function DashboardPage() {
           <span>
             Based on your history
           </span>
-
         </article>
 
         <article className="dashboard-card">
-
           <p>
             Total Fuel Used
           </p>
@@ -324,11 +307,9 @@ function DashboardPage() {
           <span>
             Recorded fuel consumption
           </span>
-
         </article>
 
         <article className="dashboard-card">
-
           <p>
             Average Fuel
           </p>
@@ -340,17 +321,13 @@ function DashboardPage() {
           <span>
             Fuel per fishing trip
           </span>
-
         </article>
-
       </section>
 
       {/* FISHING STATUS */}
 
       <section className="dashboard-welcome">
-
         <div>
-
           <p className="dashboard-label">
             FISHING STATUS
           </p>
@@ -370,7 +347,6 @@ function DashboardPage() {
               {poorTrips}
             </p>
           )}
-
         </div>
 
         <button
@@ -381,13 +357,11 @@ function DashboardPage() {
         >
           + Log Fishing Trip
         </button>
-
       </section>
 
       {/* QUICK ACTIONS */}
 
       <section className="dashboard-actions">
-
         <button
           className="primary-button"
           onClick={() =>
@@ -414,11 +388,9 @@ function DashboardPage() {
         >
           Open Route Optimizer
         </button>
-
       </section>
 
       <BottomNav />
-
     </main>
   )
 }

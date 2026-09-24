@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNav from "../components/BottomNav.tsx"
@@ -28,80 +29,84 @@ function ProfilePage() {
     localStorage.getItem("currentUser") || "null"
   )
 
+  const userId = currentUser?.user_id
+
   const [user, setUser] = useState<User | null>(null)
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!userId) {
       navigate("/login")
       return
     }
 
-    fetchProfileData()
-  }, [])
+    const fetchProfileData = async () => {
+      try {
+        setLoading(true)
+        setError("")
 
-  const fetchProfileData = async () => {
-    if (!currentUser) return
-
-    try {
-      setLoading(true)
-      setError("")
-
-      // Get profile
-      const userResponse = await fetch(
-        `${API_URL}/users/${currentUser.user_id}`,
-        {
-          headers: {
-            "X-User-ID": currentUser.user_id,
-          },
-        }
-      )
-
-      const userData = await userResponse.json()
-
-      if (!userResponse.ok) {
-        setError(
-          userData.detail ||
-            "Unable to load profile."
+        // Get profile
+        const userResponse = await fetch(
+          `${API_URL}/users/${userId}`,
+          {
+            headers: {
+              "X-User-ID": userId,
+            },
+          }
         )
-        return
-      }
 
-      setUser(userData)
+        const userData = await userResponse.json()
 
-      // Get fishing trips
-      const tripsResponse = await fetch(
-        `${API_URL}/trips/${currentUser.user_id}`,
-        {
-          headers: {
-            "X-User-ID": currentUser.user_id,
-          },
+        if (!userResponse.ok) {
+          setError(
+            userData.detail ||
+              "Unable to load profile."
+          )
+          return
         }
-      )
 
-      const tripsData = await tripsResponse.json()
+        setUser(userData)
 
-      if (!tripsResponse.ok) {
-        setError(
-          tripsData.detail ||
-            "Unable to load fishing history."
+        // Get fishing trips
+        const tripsResponse = await fetch(
+          `${API_URL}/trips/${userId}`,
+          {
+            headers: {
+              "X-User-ID": userId,
+            },
+          }
         )
-        return
+
+        const tripsData = await tripsResponse.json()
+
+        if (!tripsResponse.ok) {
+          setError(
+            tripsData.detail ||
+              "Unable to load fishing history."
+          )
+          return
+        }
+
+        setTrips(
+          Array.isArray(tripsData)
+            ? tripsData
+            : tripsData.trips || []
+        )
+      } catch (error) {
+        console.error("Profile error:", error)
+
+        setError(
+          "Unable to connect to AquaNav server. Make sure FastAPI is running."
+        )
+      } finally {
+        setLoading(false)
       }
-
-     setTrips(Array.isArray(tripsData) ? tripsData : tripsData.trips || [])
-    } catch (error) {
-      console.error("Profile error:", error)
-
-      setError(
-        "Unable to connect to AquaNav server. Make sure FastAPI is running."
-      )
-    } finally {
-      setLoading(false)
     }
-  }
+
+    fetchProfileData()
+  }, [userId, navigate])
 
   const zoneCounts: Record<string, number> = {}
 
@@ -129,9 +134,7 @@ function ProfilePage() {
   if (loading) {
     return (
       <main className="profile-page">
-
         <header className="page-header">
-
           <p className="dashboard-label">
             AQUANAV
           </p>
@@ -143,11 +146,9 @@ function ProfilePage() {
           <p>
             Loading your account...
           </p>
-
         </header>
 
         <section className="profile-card">
-
           <div className="profile-avatar">
             ⚓
           </div>
@@ -159,20 +160,16 @@ function ProfilePage() {
           <p className="profile-user-id">
             Please wait
           </p>
-
         </section>
 
         <BottomNav />
-
       </main>
     )
   }
 
   return (
     <main className="profile-page">
-
       <header className="page-header">
-
         <p className="dashboard-label">
           AQUANAV
         </p>
@@ -184,7 +181,6 @@ function ProfilePage() {
         <p>
           Manage your AquaNav account.
         </p>
-
       </header>
 
       {error && (
@@ -194,7 +190,6 @@ function ProfilePage() {
       )}
 
       <section className="profile-card">
-
         <div className="profile-avatar">
           ⚓
         </div>
@@ -210,13 +205,10 @@ function ProfilePage() {
           {user?.user_id ||
             currentUser?.user_id}
         </p>
-
       </section>
 
       <section className="profile-info">
-
         <div className="profile-row">
-
           <span>
             Account Type
           </span>
@@ -224,11 +216,9 @@ function ProfilePage() {
           <strong>
             Fisherman Account
           </strong>
-
         </div>
 
         <div className="profile-row">
-
           <span>
             Total Trips
           </span>
@@ -236,11 +226,9 @@ function ProfilePage() {
           <strong>
             {trips.length}
           </strong>
-
         </div>
 
         <div className="profile-row">
-
           <span>
             Favorite Zone
           </span>
@@ -248,9 +236,7 @@ function ProfilePage() {
           <strong>
             {formattedFavoriteZone}
           </strong>
-
         </div>
-
       </section>
 
       <button
@@ -261,9 +247,9 @@ function ProfilePage() {
       </button>
 
       <BottomNav />
-
     </main>
   )
 }
 
 export default ProfilePage
+

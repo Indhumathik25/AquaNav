@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNav from "../components/BottomNav.tsx"
@@ -35,62 +36,63 @@ function AnalyticsPage() {
     localStorage.getItem("currentUser") || "null"
   )
 
+  const userId = currentUser?.user_id
+
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!userId) {
       navigate("/login")
       return
     }
 
-    fetchTrips()
-  }, [])
+    const fetchTrips = async () => {
+      try {
+        setLoading(true)
+        setError("")
 
-  const fetchTrips = async () => {
-    if (!currentUser) return
-
-    try {
-      setLoading(true)
-      setError("")
-
-      const response = await fetch(
-        `${API_URL}/trips/${currentUser.user_id}`,
-        {
-          headers: {
-            "X-User-ID": currentUser.user_id,
-          },
-        }
-      )
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(
-          data.detail || "Unable to load analytics."
+        const response = await fetch(
+          `${API_URL}/trips/${userId}`,
+          {
+            headers: {
+              "X-User-ID": userId,
+            },
+          }
         )
-        return
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          setError(
+            data.detail ||
+              "Unable to load analytics."
+          )
+          return
+        }
+
+        setTrips(
+          Array.isArray(data)
+            ? data
+            : data.trips || []
+        )
+      } catch (error) {
+        console.error(
+          "Analytics error:",
+          error
+        )
+
+        setError(
+          "Unable to connect to AquaNav server."
+        )
+      } finally {
+        setLoading(false)
       }
-
-      setTrips(
-        Array.isArray(data)
-          ? data
-          : data.trips || []
-      )
-    } catch (error) {
-      console.error(
-        "Analytics error:",
-        error
-      )
-
-      setError(
-        "Unable to connect to AquaNav server."
-      )
-    } finally {
-      setLoading(false)
     }
-  }
+
+    fetchTrips()
+  }, [userId, navigate])
 
   /*
    * BASIC STATISTICS
@@ -531,3 +533,4 @@ function AnalyticsPage() {
 }
 
 export default AnalyticsPage
+
