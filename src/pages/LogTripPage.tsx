@@ -1,9 +1,8 @@
-
 import { useState } from "react"
 import type { FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
 
-const API_URL = "https://aquanav-backend.onrender.com";
+const API_URL = "https://aquanav-backend.onrender.com"
 
 export default function LogTripPage() {
   const navigate = useNavigate()
@@ -51,6 +50,7 @@ export default function LogTripPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-User-ID": currentUser.user_id,
         },
         body: JSON.stringify({
           user_id: currentUser.user_id,
